@@ -2,6 +2,7 @@ import mysql.connector
 from mysql.connector import Error
 from typing import List, Dict, Optional
 
+# database services
 class UsersService:
     def __init__(self, db_connection):
         self.db = db_connection
@@ -13,10 +14,20 @@ class UsersService:
 
         # applying filters
         if filters:
-            filter_clauses = [f"{k} = %s" for k, v in filters.items() if v is not None]
-            query += f" WHERE {' AND '.join(filter_clauses)}"
-            params.extend(v for v in filters.values() if v is not None)
+            filterlist= []
+            for k, v in filters.items():
+                if v:
+                    if k == "credit_gt":
+                        filterlist.append("credit > %s")
+                    elif k == "credit_lt":
+                        filterlist.append("credit < %s")
+                    else:
+                        filterlist.append(f"{k} = %s")
+                    params.append(v)
 
+            if filterlist:
+                query += " WHERE " + " AND ".join(filterlist)
+            
         # pagination
         if limit and offset is not None:
             query += " LIMIT %s OFFSET %s"
@@ -32,38 +43,42 @@ class UsersService:
             cursor.close()
 
     def create_user(self, user_data: Dict[str, str]) -> str:
-        try:
-            with self.db.cursor() as cursor:
-                cursor.execute("SELECT MAX(id) FROM users")
-                next_id = (cursor.fetchone()[0] or 0) + 1
-                columns = ['username', 'first_name', 'last_name', 'email', 'credit', 'openid', 'role', 'Avatar', 'Self_Intro', 'Birthday']
-                values = [next_id] + [user_data.get(col) for col in columns]
-                cursor.execute("INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", values)
-                self.db.commit()
-        except Error as e:
-            print(f"Error: {e}")
-            return f"Failed to create user: {e}"
-        return "User created successfully" if cursor.rowcount > 0 else "Failed to create user"
+        cursor = self.db.cursor()
 
-    def update_user(self, id: int, user_data: Dict[str, str]) -> str:
-        columns = ['username', 'first_name', 'last_name', 'email', 'credit', 'openid', 'role', 'Avatar', 'Self_Intro', 'Birthday']
-        values = [user_data[col] for col in columns] + [id]
-        try:
-            with self.db.cursor() as cursor:
-                update_query = "UPDATE users SET " + ", ".join([f"{col}=%s" for col in columns]) + " WHERE id=%s"
-                cursor.execute(update_query, values)
-                self.db.commit()
-        except Error as e:
-            print(f"Error: {e}")
-            return f"Failed to update user: {e}"
+        # get curr max id
+        cursor.execute("SELECT MAX(CAST(id AS UNSIGNED)) FROM users")
+        max_id = cursor.fetchone()[0]
+        if max_id is None:
+            next_id_int = 1
+        else:
+            next_id_int = int(max_id) + 1
+
+        # padding into 8 digits
+        next_id = f"{next_id_int:08d}"
+
+        columns = ['username', 'first_name', 'last_name', 'email', 'credit', 'openid', 'role']
+        values = [next_id] + [user_data.get(col) for col in columns]
+
+        cursor.execute("INSERT INTO users (id, username, first_name, last_name, email, credit, openid, role) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", values)
+        self.db.commit()
+        cursor.close()
+        return "User created successfully"
+
+
+    def update_user(self, user_id: int, user_data: Dict[str, str]) -> str:
+        cursor = self.db.cursor()
+        columns = ['username', 'first_name', 'last_name', 'email', 'credit', 'openid', 'role']
+        values = [user_data[col] for col in columns] + [user_id]
+        update_query = "UPDATE users SET " + ", ".join([f"{col}=%s" for col in columns]) + " WHERE id=%s"
+        cursor.execute(update_query, values)
+        self.db.commit()
+        cursor.close()
         return "User updated successfully" if cursor.rowcount > 0 else "User not found"
 
-    def delete_user(self, id: int) -> str:
-        try:
-            with self.db.cursor() as cursor:
-                cursor.execute("DELETE FROM users WHERE id = %s", (id,))
-                self.db.commit()
-        except Error as e:
-            print(f"Error: {e}")
-            return f"Failed to delete user: {e}"
+    def delete_user(self, user_id: int) -> str:
+        cursor = self.db.cursor()
+        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        self.db.commit()
+        cursor.close()
         return "User deleted successfully" if cursor.rowcount > 0 else "User not found"
+

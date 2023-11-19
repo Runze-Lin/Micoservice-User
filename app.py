@@ -8,15 +8,20 @@ app = FastAPI()
 # setting up db connection
 def setup_db_connection(host, user, pwd, db, port):
     try:
-        conn = mysql.connector.connect(host=host, user=user, passwd=pwd, database=db, port=port)
-        print("MySQL Database connected successfully.")
+        conn = mysql.connector.connect(
+            host=host,
+            user=user,
+            passwd=pwd,
+            database=db,
+            port=port)
+        print("Database connected successfully!")
     except mysql.connector.Error as err:
         print(f"Error: '{err}'")
         raise HTTPException(status_code=500, detail="Database connection failed")
     return conn
 
 # initialize db connection and UsersService
-conn = setup_db_connection("users.c6mxanhdzdn0.us-east-2.rds.amazonaws.com", "admin", "12345678", "users", 3306)
+conn = setup_db_connection("database-1.cjcvwqrysug2.us-east-2.rds.amazonaws.com", "admin", "dbuserdbuser", "users", 3306)
 users_svc = UsersService(conn)
 
 # api endpoints
@@ -25,23 +30,24 @@ async def root():
     return {"message": "Welcome to our User Management API"}
     
 @app.get("/users")
-async def get_users(username: Optional[str] = None, first_name: Optional[str] = None,
+async def get_users(id: Optional[str] = None, username: Optional[str] = None, first_name: Optional[str] = None,
                     last_name: Optional[str] = None, email: Optional[str] = None,
                     credit: Optional[int] = None, credit_lt: Optional[int] = None,
                     credit_gt: Optional[int] = None, role: Optional[str] = None,
                     limit: Optional[int] = None, offset: Optional[int] = None):
     filters = {
+        "id":id,
         "username": username,
         "first_name": first_name,
         "last_name": last_name,
         "email": email,
         "credit": credit,
-        "credit <": credit_lt,
-        "credit >": credit_gt,
+        "credit_lt": credit_lt,
+        "credit_gt": credit_gt,
         "role": role
     }
-    filters = {k: v for k, v in filters.items() if v is not None}
-    return users_svc.get_users(filters, limit, offset)
+    query = {k: v for k, v in filters.items() if v}
+    return users_svc.get_users(query, limit, offset)
 
 @app.post("/users")
 async def create_user(request: Request):
