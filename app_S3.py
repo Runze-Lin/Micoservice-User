@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://my6156s3.s3.amazonaws.com"],  # Allows all origins
+    allow_origins=["http://acs.amazonaws.com/groups/global/AllUsers"],  # Allows all origins
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
@@ -44,7 +44,7 @@ users_svc = UsersService(conn)
 # api endpoints
 @app.get("/")
 async def root():
-    return RedirectResponse(url="https://my6156s3.s3.amazonaws.com/static/index.html")
+    return RedirectResponse(url="http://acs.amazonaws.com/groups/global/AllUsers/static/index.html")
     
 @app.get("/users")
 async def get_users(id: Optional[str] = None, username: Optional[str] = None, first_name: Optional[str] = None,
