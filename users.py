@@ -67,13 +67,26 @@ class UsersService:
 
     def update_user(self, user_id: int, user_data: Dict[str, str]) -> str:
         cursor = self.db.cursor()
-        columns = ['username', 'first_name', 'last_name', 'email', 'credit', 'openid', 'role']
-        values = [user_data[col] for col in columns] + [user_id]
-        update_query = "UPDATE users SET " + ", ".join([f"{col}=%s" for col in columns]) + " WHERE id=%s"
-        cursor.execute(update_query, values)
-        self.db.commit()
-        cursor.close()
-        return "User updated successfully" if cursor.rowcount > 0 else "User not found"
+        update_statements = []
+        values = []
+
+        for column, value in user_data.items():
+            if value is not None:
+                update_statements.append(f"{column}=%s")
+                values.append(value)
+
+        update_query = "UPDATE users SET " + ", ".join(update_statements) + " WHERE id=%s"
+        values.append(user_id)
+
+        try:
+            cursor.execute(update_query, values)
+            self.db.commit()
+            return "User updated successfully" if cursor.rowcount else "User not found"
+        except Error as e:
+            print(f"Error: {e}")
+            return "Failed to update user"
+        finally:
+            cursor.close()
 
     def delete_user(self, user_id: int) -> str:
         cursor = self.db.cursor()

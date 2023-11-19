@@ -2,8 +2,23 @@ from fastapi import FastAPI, Request, HTTPException
 import mysql.connector
 from typing import Optional
 from users import UsersService
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 # setting up db connection
 def setup_db_connection(host, user, pwd, db, port):
@@ -27,7 +42,7 @@ users_svc = UsersService(conn)
 # api endpoints
 @app.get("/")
 async def root():
-    return {"message": "Welcome to our User Management API"}
+    return FileResponse('static/index.html')
     
 @app.get("/users")
 async def get_users(id: Optional[str] = None, username: Optional[str] = None, first_name: Optional[str] = None,
