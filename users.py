@@ -70,7 +70,7 @@ class UsersService:
         update_statements = []
         values = []
 
-        for column, value in user_data.items():
+        for column, value in user_data.items(): ##use a floop to get all the values needed
             if value is not None:
                 update_statements.append(f"{column}=%s")
                 values.append(value)
@@ -88,7 +88,7 @@ class UsersService:
         finally:
             cursor.close()
 
-    def delete_user(self, user_id: int) -> str:
+    def delete_user(self, user_id: int) -> str:         ## delete users function here
         cursor = self.db.cursor()
         cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
         self.db.commit()

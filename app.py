@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # setting up db connection
-def setup_db_connection(host, user, pwd, db, port):
+def setup_db_connection(host, user, pwd, db, port):   ##use this to make a connection with the databases
     try:
         conn = mysql.connector.connect(
             host=host,
@@ -36,15 +36,15 @@ def setup_db_connection(host, user, pwd, db, port):
     return conn
 
 # initialize db connection and UsersService
-conn = setup_db_connection("database-1.cjcvwqrysug2.us-east-2.rds.amazonaws.com", "admin", "dbuserdbuser", "users", 3306)
+conn = setup_db_connection("database-1.cjcvwqrysug2.us-east-2.rds.amazonaws.com", "admin", "dbuserdbuser", "users", 3306) # the settings of the db
 users_svc = UsersService(conn)
 
 # api endpoints
-@app.get("/")
+@app.get("/")  ## use this as the static page of this app
 async def root():
     return FileResponse('static/index.html')
     
-@app.get("/users")
+@app.get("/users")      ##use this to get the users
 async def get_users(id: Optional[str] = None, username: Optional[str] = None, first_name: Optional[str] = None,
                     last_name: Optional[str] = None, email: Optional[str] = None,
                     credit: Optional[int] = None, credit_lt: Optional[int] = None,
@@ -61,20 +61,20 @@ async def get_users(id: Optional[str] = None, username: Optional[str] = None, fi
         "credit_gt": credit_gt,
         "role": role
     }
-    query = {k: v for k, v in filters.items() if v}
+    query = {k: v for k, v in filters.items() if v}    ##simple search
     return users_svc.get_users(query, limit, offset)
 
-@app.post("/users")
+@app.post("/users")         ##create users function
 async def create_user(request: Request):
     user_data = await request.json()
     return users_svc.create_user(user_data)
 
-@app.put("/users/{user_id}")
+@app.put("/users/{user_id}")        ##update users function
 async def update_user(user_id: int, request: Request):
     user_data = await request.json()
     return users_svc.update_user(user_id, user_data)
 
-@app.delete("/users/{user_id}")
+@app.delete("/users/{user_id}")  ##delete users function
 async def delete_user(user_id: int):
     return users_svc.delete_user(user_id)
 
