@@ -7,91 +7,99 @@ class UsersService:
     def __init__(self, db_connection):
         self.db = db_connection
 
-    def get_users(self, filters: Dict[str, Optional[str]], limit: int, offset: int) -> List[Dict]:
+    def get_users(self, filters, limit, offset):
         cursor = self.db.cursor(dictionary=True)
         query = "SELECT * FROM users"
         params = []
 
         # applying filters
-        if filters:
-            filterlist= []
+        if filters is not None:
+            filterlist = []
             for k, v in filters.items():
                 if v:
+                    # credit greater than or less than filters
                     if k == "credit_gt":
-                        filterlist.append("credit > %s")
+                        condition = "credit > %s"
+                        filterlist.append(condition)
                     elif k == "credit_lt":
-                        filterlist.append("credit < %s")
+                        condition = "credit < %s"
+                        filterlist.append(condition)
+                    # all other filters
                     else:
-                        filterlist.append(f"{k} = %s")
+                        condition = k + " = %s"
+                        filterlist.append(condition)
                     params.append(v)
 
+            # Join all filters and construct the query
             if filterlist:
                 query += " WHERE " + " AND ".join(filterlist)
             
         # pagination
         if limit and offset is not None:
             query += " LIMIT %s OFFSET %s"
-            params.extend([limit, offset])
+            params.append(limit)
+            params.append(offset)
 
-        try:
-            cursor.execute(query, tuple(params))
-            return cursor.fetchall()
-        except Error as e:
-            print(f"Error: {e}")
-            return []
-        finally:
-            cursor.close()
+        # execute select query
+        cursor.execute(query, tuple(params))
+        users = cursor.fetchall()
+        cursor.close()
+        return users
 
-    def create_user(self, user_data: Dict[str, str]) -> str:
+
+    def create_user(self, user_data):
         cursor = self.db.cursor()
 
-        # get curr max id
+        # get current max id
         cursor.execute("SELECT MAX(CAST(id AS UNSIGNED)) FROM users")
         max_id = cursor.fetchone()[0]
-        if max_id is None:
-            next_id_int = 1
-        else:
-            next_id_int = int(max_id) + 1
+        next_id_int = 1 if max_id is None else int(max_id) + 1
 
         # padding into 8 digits
-        next_id = f"{next_id_int:08d}"
+        next_id = str(next_id_int).zfill(8)
 
         columns = ['username', 'first_name', 'last_name', 'email', 'credit', 'openid', 'role']
         values = [next_id] + [user_data.get(col) for col in columns]
 
-        cursor.execute("INSERT INTO users (id, username, first_name, last_name, email, credit, openid, role) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", values)
+        # execute insert query
+        query = "INSERT INTO users (id, username, first_name, last_name, email, credit, openid, role) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(query, values)
         self.db.commit()
+        cnt = cursor.rowcount
         cursor.close()
-        return "User created successfully"
+        return "User created successfully" if cnt > 0 else "Failed to create user"
 
-
-    def update_user(self, user_id: int, user_data: Dict[str, str]) -> str:
+    def update_user(self, user_id, user_data):
         cursor = self.db.cursor()
-        update_statements = []
-        values = []
+        statements = []
+        vals = []
 
-        for column, value in user_data.items(): ##use a floop to get all the values needed
-            if value is not None:
-                update_statements.append(f"{column}=%s")
-                values.append(value)
+        # get all update fields
+        for col in user_data:
+            v = user_data[col]
+            if v:
+                statement = col + "=%s"
+                statements.append(statement)
+                vals.append(v)
 
-        update_query = "UPDATE users SET " + ", ".join(update_statements) + " WHERE id=%s"
-        values.append(user_id)
+        query = "UPDATE users SET " + ", ".join(statements) + " WHERE id=%s"
+        vals.append(user_id)
 
-        try:
-            cursor.execute(update_query, values)
-            self.db.commit()
-            return "User updated successfully" if cursor.rowcount else "User not found"
-        except Error as e:
-            print(f"Error: {e}")
-            return "Failed to update user"
-        finally:
-            cursor.close()
-
-    def delete_user(self, user_id: int) -> str:         ## delete users function here
-        cursor = self.db.cursor()
-        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        # execute update query
+        cursor.execute(query, vals)
         self.db.commit()
+        cnt = cursor.rowcount
         cursor.close()
-        return "User deleted successfully" if cursor.rowcount > 0 else "User not found"
 
+        return "User updated successfully" if cnt > 0 else "User not found"
+
+    def delete_user(self, user_id):
+        cursor = self.db.cursor()
+        query = "DELETE FROM users WHERE id = %s"
+
+        # execute delete query
+        cursor.execute(query, (user_id,))
+        self.db.commit()
+        cnt = cursor.rowcount
+        cursor.close()
+        return "User deleted successfully" if cnt > 0 else "User not found"

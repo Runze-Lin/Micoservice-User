@@ -1,83 +1,134 @@
-const apiBaseUrl = 'http://localhost:8012'; // Base URL for the API
+// base URL
+var apiBaseUrl = 'http://localhost:8012';
 
-// Function to get users
-function getUsers() {
-    fetch(`${apiBaseUrl}/users`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('getUsersResult').innerHTML = JSON.stringify(data, null, 2);
+// convert form data to a query string
+function formDataToQueryString(formData) {
+    var params = '';
+    for (var pair of formData.entries()) {
+        if (pair[1]) {
+            params += pair[0] + '=' + encodeURIComponent(pair[1]) + '&';
+        }
+    }
+    return params.slice(0, -1); // remove the last '&'
+}
+
+// filter users
+document.getElementById('filterUsersForm').onsubmit = function(event) {
+    event.preventDefault();
+    var formData = new FormData(event.target);
+    getUsers(formData);
+};
+
+// get all users
+document.getElementById('getAllUsersButton').onclick = function() {
+    getUsers();
+};
+
+// get users (for filter users & get all users)
+function getUsers(formData = null) {
+    var url = apiBaseUrl + '/users';
+    if (formData) {
+        url += '?' + formDataToQueryString(formData);
+    }
+    fetch(url)
+        .then(function(response) {
+            return response.json();
         })
-        .catch(error => {
+        .then(function(data) {
+            var resultContainer = document.getElementById('getUsersResult');
+            resultContainer.innerHTML = '';
+            if (Array.isArray(data) && data.length > 0) {
+                data.forEach(function(user) {
+                    var userString = 'ID: ' + user.id + ', Username: ' + user.username + ', Name: ' + user.first_name + ' ' + user.last_name + ', Email: ' + user.email + ', Credit: ' + user.credit + ', OpenID: ' + user.openid + ', Role: ' + user.role;
+                    var userDiv = document.createElement('div');
+                    userDiv.textContent = userString;
+                    resultContainer.appendChild(userDiv);
+                });
+            } else {
+                resultContainer.textContent = 'No (such) users were found';
+            }
+        })
+        .catch(function(error) {
             console.error('Error:', error);
         });
 }
 
-// Function to create a user
-document.getElementById('createUserForm').addEventListener('submit', function(event) {
+// create a user (POST)
+document.getElementById('createUserForm').onsubmit = function(event) {
     event.preventDefault();
-    let formData = new FormData(event.target);
-    let userData = Object.fromEntries(formData.entries());
-    fetch(`${apiBaseUrl}/users`, {
+    var formData = new FormData(event.target);
+    var userData = {};
+    formData.forEach(function(value, key) {
+        userData[key] = value;
+    });
+
+    fetch(apiBaseUrl + '/users', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(userData),
     })
-    .then(response => response.json())
-    .then(data => {
-        alert('User created');
-        // Optionally, clear the form or provide further user feedback
+    .then(function(response) {
+        return response.json();
     })
-    .catch(error => {
+    .then(function(data) {
+        alert('User created');
+    })
+    .catch(function(error) {
         alert('Error creating user');
         console.error('Error:', error);
     });
-});
+};
 
-// Function to update a user
-document.getElementById('updateUserForm').addEventListener('submit', function(event) {
+// update a user (PUT)
+document.getElementById('updateUserForm').onsubmit = function(event) {
     event.preventDefault();
-    let formData = new FormData(event.target);
-    let userId = formData.get('id'); // Extract the user ID to use in the URL
-    formData.delete('id'); // Remove ID from formData since it's not needed in the request body
+    var formData = new FormData(event.target);
+    // find matching user
+    var userId = formData.get('id');
+    formData.delete('id');
 
-    let userData = {};
-    formData.forEach((value, key) => {
-        if (value) userData[key] = value; // Only add fields that have values
+    var userData = {};
+    // update each filled field
+    formData.forEach(function(value, key) {
+        if (value) userData[key] = value;
     });
 
-    fetch(`${apiBaseUrl}/users/${userId}`, {
+    fetch(apiBaseUrl + '/users/' + userId, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(userData),
     })
-    .then(response => response.json())
-    .then(data => {
-        alert('User updated');
-        // Optionally, clear the form or provide further user feedback
+    .then(function(response) {
+        return response.json();
     })
-    .catch(error => {
+    .then(function(data) {
+        alert('User updated');
+    })
+    .catch(function(error) {
         alert('Error updating user');
         console.error('Error:', error);
     });
-});
+};
 
-// Function to delete a user
-function deleteUser() {
-    let userId = document.getElementById('deleteUserId').value;
-    fetch(`${apiBaseUrl}/users/${userId}`, {
+// delete a user (DELETE)
+document.getElementById('deleteUserForm').onsubmit = function(event) {
+    event.preventDefault();
+    var userId = document.getElementById('deleteUserId').value;
+    fetch(apiBaseUrl + '/users/' + userId, {
         method: 'DELETE',
     })
-    .then(response => response.json())
-    .then(data => {
-        alert('User deleted');
-        // Optionally, clear the input field or provide further user feedback
+    .then(function(response) {
+        return response.json();
     })
-    .catch(error => {
+    .then(function(data) {
+        alert('User deleted');
+    })
+    .catch(function(error) {
         alert('Error deleting user');
         console.error('Error:', error);
     });
-}
+};
