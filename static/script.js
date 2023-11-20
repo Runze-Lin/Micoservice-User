@@ -1,5 +1,5 @@
 // base URL
-var apiBaseUrl = 'http://localhost:8012';
+var apiBaseUrl = window.location.origin;
 
 // convert form data to a query string
 function formDataToQueryString(formData) {
