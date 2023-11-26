@@ -1,14 +1,19 @@
+# References: 
+# https://examples.javacodegeeks.com/crud-operations-in-python-on-mysql/
+# https://sesamedisk.com/how-to-write-mysql-crud-queries-in-python/
+
 import mysql.connector
 from mysql.connector import Error
 from typing import List, Dict, Optional
+from db_service import Database
 
 # database services
 class UsersService:
-    def __init__(self, db_connection):
-        self.db = db_connection
+    def __init__(self):
+        self.db = Database()
+        self.db.connect()
 
     def get_users(self, filters, limit, offset):
-        cursor = self.db.cursor(dictionary=True)
         query = "SELECT * FROM users"
         params = []
 
@@ -41,18 +46,12 @@ class UsersService:
             params.append(offset)
 
         # execute select query
-        cursor.execute(query, tuple(params))
-        users = cursor.fetchall()
-        cursor.close()
-        return users
-
+        return self.db.execute_query(query, tuple(params))
 
     def create_user(self, user_data):
-        cursor = self.db.cursor()
-
         # get current max id
-        cursor.execute("SELECT MAX(CAST(id AS UNSIGNED)) FROM users")
-        max_id = cursor.fetchone()[0]
+        max_id_result = self.db.execute_query("SELECT MAX(CAST(id AS UNSIGNED)) FROM users")
+        max_id = max_id_result[0]['MAX(CAST(id AS UNSIGNED))'] if max_id_result else 0
         next_id_int = 1 if max_id is None else int(max_id) + 1
 
         # padding into 8 digits
@@ -63,14 +62,10 @@ class UsersService:
 
         # execute insert query
         query = "INSERT INTO users (id, username, first_name, last_name, email, credit, openid, role) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(query, values)
-        self.db.commit()
-        cnt = cursor.rowcount
-        cursor.close()
-        return "User created successfully" if cnt > 0 else "Failed to create user"
+        insert_count = self.db.execute_query(query, values)
+        return "User created successfully" if insert_count > 0 else "Failed to create user"
 
     def update_user(self, user_id, user_data):
-        cursor = self.db.cursor()
         statements = []
         vals = []
 
@@ -78,28 +73,17 @@ class UsersService:
         for col in user_data:
             v = user_data[col]
             if v:
-                statement = col + "=%s"
-                statements.append(statement)
+                statements.append(col + "=%s")
                 vals.append(v)
 
         query = "UPDATE users SET " + ", ".join(statements) + " WHERE id=%s"
         vals.append(user_id)
 
         # execute update query
-        cursor.execute(query, vals)
-        self.db.commit()
-        cnt = cursor.rowcount
-        cursor.close()
-
-        return "User updated successfully" if cnt > 0 else "User not found"
+        update_count = self.db.execute_query(query, vals)
+        return "User updated successfully" if update_count > 0 else "User not found"
 
     def delete_user(self, user_id):
-        cursor = self.db.cursor()
         query = "DELETE FROM users WHERE id = %s"
-
-        # execute delete query
-        cursor.execute(query, (user_id,))
-        self.db.commit()
-        cnt = cursor.rowcount
-        cursor.close()
-        return "User deleted successfully" if cnt > 0 else "User not found"
+        delete_count = self.db.execute_query(query, (user_id,))
+        return "User deleted successfully" if delete_count > 0 else "User not found"

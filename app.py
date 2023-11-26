@@ -1,3 +1,8 @@
+# References: 
+    # https://examples.javacodegeeks.com/crud-operations-in-python-on-mysql/    
+    # https://sesamedisk.com/how-to-write-mysql-crud-queries-in-python/
+from login.google_sso import router as google_sso_router
+
 from fastapi import FastAPI, Request, HTTPException
 import mysql.connector
 from typing import Optional
@@ -5,8 +10,10 @@ from users import UsersService
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 app = FastAPI()
+app.include_router(google_sso_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -20,24 +27,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# setting up db connection
-def setup_db_connection(host, user, pwd, db, port):   ##use this to make a connection with the databases
-    try:
-        conn = mysql.connector.connect(
-            host=host,
-            user=user,
-            passwd=pwd,
-            database=db,
-            port=port)
-        print("Database connected successfully!")
-    except mysql.connector.Error as err:
-        print(f"Error: '{err}'")
-        raise HTTPException(status_code=500, detail="Database connection failed")
-    return conn
-
-# initialize db connection and UsersService
-conn = setup_db_connection("database-1.cjcvwqrysug2.us-east-2.rds.amazonaws.com", "admin", "dbuserdbuser", "users", 3306) # the settings of the db
-users_svc = UsersService(conn)
+users_svc = UsersService()
 
 # api endpoints
 @app.get("/")  ## use this as the static page of this app

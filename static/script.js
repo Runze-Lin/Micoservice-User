@@ -1,3 +1,8 @@
+// References: 
+    // https://developer.mozilla.org/en-US/docs/Web/API/FormData
+    // https://reqbin.com/code/javascript/wc3qbk0b/javascript-fetch-json-example
+    // https://stackoverflow.com/questions/9855656/how-can-i-submit-a-form-using-javascript
+
 // base URL
 var apiBaseUrl = window.location.origin;
 
