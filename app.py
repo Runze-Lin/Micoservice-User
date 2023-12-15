@@ -30,7 +30,7 @@ app.add_middleware(
 users_svc = UsersService()
 
 # api endpoints
-@app.get("/")  ## use this as the static page of this app
+@app.get("/frontend")  ## use this as the static page of this app
 async def root():
     return FileResponse('static/index.html')
     
