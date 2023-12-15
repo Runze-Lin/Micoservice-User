@@ -4,8 +4,6 @@ import httpx
 import json
 import os
 
-from ..users import UsersService
-
 from .google_module import GoogleSSO
 
 app = FastAPI()
@@ -69,13 +67,13 @@ async def home_page():
         <p>
         This is Login page for <a href="https://donald-f-ferguson.github.io/E6156-Cloud-Computing-F23/">
         Nestly.</a> 
-        <form action="{OAUTH_URL}/auth/login" method="get">
-                <input type="hidden" name="role" value="host">
-                <button type="submit" class="button">Login as Host</button>
-            </form>
-            <form action="{OAUTH_URL}/auth/login" method="get">
-                <input type="hidden" name="role" value="guest">
-                <button type="submit" class="button">Login as Guest</button>
+        <form action="{OAUTH_URL}/auth/login">
+            <div class="logo">
+                <img src="static/rent.jpeg" 
+                    height="100px" alt="Google Logo">
+            </div>
+            <h2>Sign in with your Google Account</h2>
+            <button type="submit" class="button">Login with Google</button>
             </form>
         </div>
     </body>
@@ -100,22 +98,6 @@ async def auth_callback(request: Request):
     try:
         with sso:
             user = await sso.verify_and_process(request)
-
-            role = request.query_params.get("role", "guest")
-
-            user_info = {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "display_name": user.display_name,
-                "role": role
-            }
-
-            users_svc = UsersService()
-            users_svc.create_user(user_info)
-
-
             html_content = f"""
                 <!DOCTYPE html>
                 <html>
@@ -130,7 +112,6 @@ async def auth_callback(request: Request):
                     <p>First Name: {user.first_name}</p>
                     <p>Last Name: {user.last_name}</p>
                     <p>Display Name: {user.display_name}</p>
-                    <p>Role: {user.role}</p>
                 </body>
                 </html>
                 """
