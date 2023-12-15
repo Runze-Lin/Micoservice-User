@@ -51,14 +51,14 @@ async def check_and_create_host(user):
 async def check_and_create_guest(user):
     users_service = UsersService()
 
-    # Check if the user already exists as a guest
+    # check if the user already exists as a guest
     filters = {'email': user.email, 'role': 'guest'}
     existing_users = users_service.get_users(filters=filters, limit=1, offset=0)
 
     if existing_users:
         return "User already exists as a guest."
 
-    # Create the user if they do not exist in db yet
+    # create the user if they do not exist in db yet
     user_data = {
         'username': user.display_name.replace(" ", ""),
         'first_name': user.first_name,
@@ -68,6 +68,7 @@ async def check_and_create_guest(user):
         'openid': user.id,
         'role': 'guest'  # login as guest
     }
+    print(user_data)
 
     creation_result = users_service.create_user(user_data)
     return creation_result
@@ -216,6 +217,7 @@ async def auth_callback(request: Request):
 async def login_host(user_data: dict):
     # check if the user (by email) already exist as a host; if not, add into users db
     user_info = user_data['user']
+    print(user_info)
     try:
         result = await check_and_create_host(user_info)
         return {"message": result}
@@ -225,6 +227,7 @@ async def login_host(user_data: dict):
 @router.post("/login/guest")
 async def login_guest(user_data: dict):
     user_info = user_data['user']
+    print(user_info)
     # check if the user (by email) already exist as a guest, if not, add into users db
     try:
         result = await check_and_create_guest(user_info)
