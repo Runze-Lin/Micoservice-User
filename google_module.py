@@ -3,7 +3,7 @@
 
 import httpx
 
-from .base import DiscoveryDocument, OpenID, SSOBase, SSOLoginError
+from base import DiscoveryDocument, OpenID, SSOBase, SSOLoginError
 
 
 class GoogleSSO(SSOBase):

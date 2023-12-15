@@ -1,7 +1,7 @@
 # References: 
     # https://examples.javacodegeeks.com/crud-operations-in-python-on-mysql/    
     # https://sesamedisk.com/how-to-write-mysql-crud-queries-in-python/
-from login.google_sso import router as google_sso_router
+from google_sso import router as google_sso_router
 
 from fastapi import FastAPI, Request, HTTPException
 import mysql.connector
