@@ -25,46 +25,33 @@ sso = GoogleSSO(
 )
 
 async def check_and_create_host(user):
-    print("Entering check_and_create_host")
     users_service = UsersService()
 
     # check if the user already exists as a host
     filters = {'email': user['email'], 'role': 'host'}
-    print(f"Filters applied: {filters}")
-    
-    try:
-        existing_users = users_service.get_users(filters=filters, limit=1, offset=0)
-        print(f"Existing users found: {existing_users}")
+    existing_users = users_service.get_users(filters=filters, limit=1, offset=0)
 
-        if existing_users:
-            return "User already exists as a host."
+    if existing_users:
+        return "User already exists as a host."
 
-        # Prepare user data for creation
-        user_data = {
-            'username': user['display_name'].replace(" ", ""),
-            'first_name': user['first_name'],
-            'last_name': user['last_name'],
-            'email': user['email'],
-            'credit': 100,  # default
-            'openid': user['id'],
-            'role': 'host'  # login as host
-        }
-        print(f"User data to be created: {user_data}")
-
-        creation_result = users_service.create_user(user_data)
-        print(f"User creation result: {creation_result}")
-        return creation_result
-
-    except Exception as e:
-        print(f"Error in check_and_create_host: {e}")
-        raise
-
+    # create the user if they do not exist in db yet
+    user_data = {
+        'username': user['display_name'].replace(" ", ""),
+        'first_name': user['first_name'],
+        'last_name': user['last_name'],
+        'email': user['email'],
+        'credit': 100,  # default
+        'openid': user['id'],
+        'role': 'host'  # login as host
+    }
+    creation_result = users_service.create_user(user_data)
+    return creation_result
 
 async def check_and_create_guest(user):
     users_service = UsersService()
 
     # check if the user already exists as a guest
-    filters = {'email': user.email, 'role': 'guest'}
+    filters = {'email': user['email'], 'role': 'guest'}
     existing_users = users_service.get_users(filters=filters, limit=1, offset=0)
 
     if existing_users:
@@ -72,15 +59,14 @@ async def check_and_create_guest(user):
 
     # create the user if they do not exist in db yet
     user_data = {
-        'username': user.display_name.replace(" ", ""),
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'email': user.email,
+        'username': user['display_name'].replace(" ", ""),
+        'first_name': user['first_name'],
+        'last_name': user['last_name'],
+        'email': user['email'],
         'credit': 100,  # default credit for guests
-        'openid': user.id,
+        'openid': user['id'],
         'role': 'guest'  # login as guest
     }
-    print(user_data)
 
     creation_result = users_service.create_user(user_data)
     return creation_result
@@ -229,10 +215,10 @@ async def auth_callback(request: Request):
 async def login_host(user_data: dict):
     # check if the user (by email) already exist as a host; if not, add into users db
     user_info = user_data['user']
-    print(user_info)
     try:
         result = await check_and_create_host(user_info)
         return {"message": result}
+        # you may add redirect to personal homepage, etc. here
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -244,6 +230,7 @@ async def login_guest(user_data: dict):
     try:
         result = await check_and_create_guest(user_info)
         return {"message": result}
+        # you may add redirect to personal homepage, etc. here
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
