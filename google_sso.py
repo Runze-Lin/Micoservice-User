@@ -25,28 +25,40 @@ sso = GoogleSSO(
 )
 
 async def check_and_create_host(user):
+    print("Entering check_and_create_host")
     users_service = UsersService()
 
     # check if the user already exists as a host
-    filters = {'email': user.email, 'role': 'host'}
-    existing_users = users_service.get_users(filters=filters, limit=1, offset=0)
+    filters = {'email': user['email'], 'role': 'host'}
+    print(f"Filters applied: {filters}")
+    
+    try:
+        existing_users = users_service.get_users(filters=filters, limit=1, offset=0)
+        print(f"Existing users found: {existing_users}")
 
-    if existing_users:
-        return "User already exists as a host."
+        if existing_users:
+            return "User already exists as a host."
 
-    # create the user if they do not exist in db yet
-    user_data = {
-        'username': user.display_name.replace(" ", ""),
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'email': user.email,
-        'credit': 100,  # default
-        'openid': user.id,
-        'role': 'host' # login as host
-    }
+        # Prepare user data for creation
+        user_data = {
+            'username': user['display_name'].replace(" ", ""),
+            'first_name': user['first_name'],
+            'last_name': user['last_name'],
+            'email': user['email'],
+            'credit': 100,  # default
+            'openid': user['id'],
+            'role': 'host'  # login as host
+        }
+        print(f"User data to be created: {user_data}")
 
-    creation_result = users_service.create_user(user_data)
-    return creation_result
+        creation_result = users_service.create_user(user_data)
+        print(f"User creation result: {creation_result}")
+        return creation_result
+
+    except Exception as e:
+        print(f"Error in check_and_create_host: {e}")
+        raise
+
 
 async def check_and_create_guest(user):
     users_service = UsersService()
