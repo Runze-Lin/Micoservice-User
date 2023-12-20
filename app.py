@@ -54,6 +54,11 @@ async def get_users(id: Optional[str] = None, username: Optional[str] = None, fi
     query = {k: v for k, v in filters.items() if v}    ##simple search
     return users_svc.get_users(query, limit, offset)
 
+@app.get("/users/{user_id}")  ## get user by user_id
+async def get_user(user_id: int):
+    user = users_svc.get_users({"id": user_id}, limit=1, offset=None)
+    return user[0]
+
 @app.post("/users")         ##create users function
 async def create_user(request: Request):
     user_data = await request.json()
