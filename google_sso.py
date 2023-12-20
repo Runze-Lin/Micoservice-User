@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException, Response, APIRouter
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 import httpx
 import json
 import os
@@ -218,6 +218,7 @@ async def auth_callback(request: Request):
                             .then(data => {{
                                 alert(data.message);
                             }});
+
                         }});
                     </script>
                 </body>
@@ -237,14 +238,14 @@ async def login_host(user_data: dict):
         result = await check_and_create_host(user_info)
         # get user id to use as sub for jwt token creation 
         users_service = UsersService()
-        filters = {'email': user['email'], 'role': 'host'}
+        filters = {'email': user_info['email'], 'role': 'host'}
         users = users_service.get_users(filters=filters, limit=1, offset=0)
         user_id = users[0]['id']
 
         # generate jwt token
         token = generate_jwt_token(
             user_id=user_id,
-            user_role="host",
+            role="host",
             secret_key=SECRET_KEY
         )
 
@@ -256,20 +257,20 @@ async def login_host(user_data: dict):
 @router.post("/login/guest")
 async def login_guest(user_data: dict):
     user_info = user_data['user']
-    print(user_info)
+    
     # check if the user (by email) already exist as a guest, if not, add into users db
     try:
         result = await check_and_create_guest(user_info)
-
         # get user id to use as sub for jwt token creation 
         users_service = UsersService()
-        filters = {'email': user['email'], 'role': 'guest'}
+        filters = {'email': user_info['email'], 'role': 'guest'}
         users = users_service.get_users(filters=filters, limit=1, offset=0)
         user_id = users[0]['id']
+
         # generate jwt token
         token = generate_jwt_token(
             user_id=user_id,
-            user_role="guest",
+            role="guest",
             secret_key=SECRET_KEY
         )
 
@@ -283,30 +284,24 @@ async def login_guest(user_data: dict):
 async def login_admin(user_data: dict):
     user_info = user_data['user']
     print(user_info)
-    try:
-        # do not check-and-create for admin, directly check and if the account has not been added as admin (manually),
-            # directly reject them and promptfor login as other roles
-        # get user id to use as sub for jwt token creation
-        users_service = UsersService()
-        filters = {'email': user_info['email'], 'role': 'admin'}
-        users = users_service.get_users(filters=filters, limit=1, offset=0)
-        
-        if not users:
-            raise HTTPException(status_code=404, detail="This account is not registered as an Admin, please log in as host/guest.")
-        
-        user_id = users[0]['id'] 
+    
+    users_service = UsersService()
+    filters = {'email': user_info['email'], 'role': 'admin'}
+    users = users_service.get_users(filters=filters, limit=1, offset=0)
+    if users == []:
+        content = {"message": "This account is not registered as an Admin, please log in as host/guest."}
+        return JSONResponse(content=content, status_code=404)
+    user_id = users[0]['id'] 
+    print(user_id)
+    # Generate jwt token
+    token = generate_jwt_token(
+        user_id=user_id,
+        role="admin",
+        secret_key=SECRET_KEY
+    )
+    # you may add redirect to personal homepage, etc. here
+    return {"message": "Welcome!", "token": token}
 
-        # Generate jwt token
-        token = generate_jwt_token(
-            user_id=user_id,
-            user_role="admin",
-            secret_key=SECRET_KEY
-        )
-
-        return {"message": result, "token": token}
-        # You may add redirect to personal homepage, etc. here
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 app.include_router(router)
