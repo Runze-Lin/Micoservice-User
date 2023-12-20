@@ -6,7 +6,7 @@ import os
 
 from google_module import GoogleSSO
 from users import UsersService
-from jwt_encode import generate_jwt_token
+from jwt_encoder import generate_jwt_token
 
 
 app = FastAPI()
@@ -159,71 +159,71 @@ async def auth_callback(request: Request):
                 'picture': user.picture  # Include any other fields you need
             })
             html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>User Info</title>
-    </head>
-    <body>
-        <h1>User Information</h1>
-        <img src="{user.picture}" alt="User Picture" width="96" height="96"><br>
-        <p><b>OpenID:</b> {user.id}</p>
-        <p>Email: {user.email}</p>
-        <p>First Name: {user.first_name}</p>
-        <p>Last Name: {user.last_name}</p>
-        <p>Display Name: {user.display_name}</p>
-        <button id="login-host">Login as Host</button>
-        <button id="login-guest">Login as Guest</button>
-        <button id="login-admin">Login as Admin</button>
-        <script>
-            const userData = {user_json};
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>User Info</title>
+                </head>
+                <body>
+                    <h1>User Information</h1>
+                    <img src="{user.picture}" alt="User Picture" width="96" height="96"><br>
+                    <p><b>OpenID:</b> {user.id}</p>
+                    <p>Email: {user.email}</p>
+                    <p>First Name: {user.first_name}</p>
+                    <p>Last Name: {user.last_name}</p>
+                    <p>Display Name: {user.display_name}</p>
+                    <button id="login-host">Login as Host</button>
+                    <button id="login-guest">Login as Guest</button>
+                    <button id="login-admin">Login as Admin</button>
+                    <script>
+                        const userData = {user_json};
 
-            document.getElementById('login-host').addEventListener('click', function() {{
-                fetch('/login/host', {{
-                    method: 'POST',
-                    headers: {{
-                        'Content-Type': 'application/json'
-                    }},
-                    body: JSON.stringify({{ 'user': userData }})
-                }})
-                .then(response => response.json())
-                .then(data => {{
-                    alert(data.message);
-                }});
-            }});
+                        document.getElementById('login-host').addEventListener('click', function() {{
+                            fetch('/login/host', {{
+                                method: 'POST',
+                                headers: {{
+                                    'Content-Type': 'application/json'
+                                }},
+                                body: JSON.stringify({{ 'user': userData }})
+                            }})
+                            .then(response => response.json())
+                            .then(data => {{
+                                alert(data.message);
+                            }});
+                        }});
 
-            document.getElementById('login-guest').addEventListener('click', function() {{
-                fetch('/login/guest', {{
-                    method: 'POST',
-                    headers: {{
-                        'Content-Type': 'application/json'
-                    }},
-                    body: JSON.stringify({{ 'user': userData }})
-                }})
-                .then(response => response.json())
-                .then(data => {{
-                    alert(data.message);
-                }});
-            }});
+                        document.getElementById('login-guest').addEventListener('click', function() {{
+                            fetch('/login/guest', {{
+                                method: 'POST',
+                                headers: {{
+                                    'Content-Type': 'application/json'
+                                }},
+                                body: JSON.stringify({{ 'user': userData }})
+                            }})
+                            .then(response => response.json())
+                            .then(data => {{
+                                alert(data.message);
+                            }});
+                        }});
 
-            document.getElementById('login-admin').addEventListener('click', function() {{
-                fetch('/login/admin', {{
-                    method: 'POST',
-                    headers: {{
-                        'Content-Type': 'application/json'
-                    }},
-                    body: JSON.stringify({{ 'user': userData }})
-                }})
-                .then(response => response.json())
-                .then(data => {{
-                    alert(data.message);
-                }});
-            }});
-        </script>
-    </body>
-    </html>
-    """
-return HTMLResponse(content=html_content)
+                        document.getElementById('login-admin').addEventListener('click', function() {{
+                            fetch('/login/admin', {{
+                                method: 'POST',
+                                headers: {{
+                                    'Content-Type': 'application/json'
+                                }},
+                                body: JSON.stringify({{ 'user': userData }})
+                            }})
+                            .then(response => response.json())
+                            .then(data => {{
+                                alert(data.message);
+                            }});
+                        }});
+                    </script>
+                </body>
+                </html>
+                """
+            return HTMLResponse(content=html_content)
 
     except Exception as e:
         print(e)
