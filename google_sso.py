@@ -6,6 +6,7 @@ import os
 
 from google_module import GoogleSSO
 from users import UsersService
+from jwt_encode import generate_jwt_token
 
 
 app = FastAPI()
@@ -16,6 +17,7 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # to allow HTTP temporarily, mig
 CLIENT_ID = "1064225628661-3s8lonjjjb2risas266sfs5udkntp7qg.apps.googleusercontent.com"
 CLIENT_SECRET = "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"
 OAUTH_URL = "https://ec2-3-144-182-9.us-east-2.compute.amazonaws.com"
+SECRET_KEY = "Doritos"
 
 sso = GoogleSSO(
     client_id=CLIENT_ID,
@@ -157,56 +159,72 @@ async def auth_callback(request: Request):
                 'picture': user.picture  # Include any other fields you need
             })
             html_content = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>User Info</title>
-                </head>
-                <body>
-                    <h1>User Information</h1>
-                    <img src="{user.picture}" alt="User Picture" width="96" height="96"><br>
-                    <p><b>OpenID:</b> {user.id}</p>
-                    <p>Email: {user.email}</p>
-                    <p>First Name: {user.first_name}</p>
-                    <p>Last Name: {user.last_name}</p>
-                    <p>Display Name: {user.display_name}</p>
-                    <button id="login-host">Login as Host</button>
-                    <button id="login-guest">Login as Guest</button>
-                    <script>
-                        const userData = {user_json};
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>User Info</title>
+    </head>
+    <body>
+        <h1>User Information</h1>
+        <img src="{user.picture}" alt="User Picture" width="96" height="96"><br>
+        <p><b>OpenID:</b> {user.id}</p>
+        <p>Email: {user.email}</p>
+        <p>First Name: {user.first_name}</p>
+        <p>Last Name: {user.last_name}</p>
+        <p>Display Name: {user.display_name}</p>
+        <button id="login-host">Login as Host</button>
+        <button id="login-guest">Login as Guest</button>
+        <button id="login-admin">Login as Admin</button>
+        <script>
+            const userData = {user_json};
 
-                        document.getElementById('login-host').addEventListener('click', function() {{
-                            fetch('/login/host', {{
-                                method: 'POST',
-                                headers: {{
-                                    'Content-Type': 'application/json'
-                                }},
-                                body: JSON.stringify({{ 'user': userData }})
-                            }})
-                            .then(response => response.json())
-                            .then(data => {{
-                                alert(data.message);
-                            }});
-                        }});
+            document.getElementById('login-host').addEventListener('click', function() {{
+                fetch('/login/host', {{
+                    method: 'POST',
+                    headers: {{
+                        'Content-Type': 'application/json'
+                    }},
+                    body: JSON.stringify({{ 'user': userData }})
+                }})
+                .then(response => response.json())
+                .then(data => {{
+                    alert(data.message);
+                }});
+            }});
 
-                        document.getElementById('login-guest').addEventListener('click', function() {{
-                            fetch('/login/guest', {{
-                                method: 'POST',
-                                headers: {{
-                                    'Content-Type': 'application/json'
-                                }},
-                                body: JSON.stringify({{ 'user': userData }})
-                            }})
-                            .then(response => response.json())
-                            .then(data => {{
-                                alert(data.message);
-                            }});
-                        }});
-                    </script>
-                </body>
-                </html>
-                """
-            return HTMLResponse(content=html_content)
+            document.getElementById('login-guest').addEventListener('click', function() {{
+                fetch('/login/guest', {{
+                    method: 'POST',
+                    headers: {{
+                        'Content-Type': 'application/json'
+                    }},
+                    body: JSON.stringify({{ 'user': userData }})
+                }})
+                .then(response => response.json())
+                .then(data => {{
+                    alert(data.message);
+                }});
+            }});
+
+            document.getElementById('login-admin').addEventListener('click', function() {{
+                fetch('/login/admin', {{
+                    method: 'POST',
+                    headers: {{
+                        'Content-Type': 'application/json'
+                    }},
+                    body: JSON.stringify({{ 'user': userData }})
+                }})
+                .then(response => response.json())
+                .then(data => {{
+                    alert(data.message);
+                }});
+            }});
+        </script>
+    </body>
+    </html>
+    """
+return HTMLResponse(content=html_content)
+
     except Exception as e:
         print(e)
         return RedirectResponse("/static/error.html")
@@ -217,7 +235,20 @@ async def login_host(user_data: dict):
     user_info = user_data['user']
     try:
         result = await check_and_create_host(user_info)
-        return {"message": result}
+        # get user id to use as sub for jwt token creation 
+        users_service = UsersService()
+        filters = {'email': user['email'], 'role': 'host'}
+        users = users_service.get_users(filters=filters, limit=1, offset=0)
+        user_id = users[0]['id']
+
+        # generate jwt token
+        token = generate_jwt_token(
+            user_id=user_id,
+            user_role="host",
+            secret_key=SECRET_KEY
+        )
+
+        return {"message": result, "token": token}
         # you may add redirect to personal homepage, etc. here
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -229,8 +260,51 @@ async def login_guest(user_data: dict):
     # check if the user (by email) already exist as a guest, if not, add into users db
     try:
         result = await check_and_create_guest(user_info)
-        return {"message": result}
+
+        # get user id to use as sub for jwt token creation 
+        users_service = UsersService()
+        filters = {'email': user['email'], 'role': 'guest'}
+        users = users_service.get_users(filters=filters, limit=1, offset=0)
+        user_id = users[0]['id']
+        # generate jwt token
+        token = generate_jwt_token(
+            user_id=user_id,
+            user_role="guest",
+            secret_key=SECRET_KEY
+        )
+
+        return {"message": result, "token": token}
         # you may add redirect to personal homepage, etc. here
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/login/admin")
+async def login_admin(user_data: dict):
+    user_info = user_data['user']
+    print(user_info)
+    try:
+        # do not check-and-create for admin, directly check and if the account has not been added as admin (manually),
+            # directly reject them and promptfor login as other roles
+        # get user id to use as sub for jwt token creation
+        users_service = UsersService()
+        filters = {'email': user_info['email'], 'role': 'admin'}
+        users = users_service.get_users(filters=filters, limit=1, offset=0)
+        
+        if not users:
+            raise HTTPException(status_code=404, detail="This account is not registered as an Admin, please log in as host/guest.")
+        
+        user_id = users[0]['id'] 
+
+        # Generate jwt token
+        token = generate_jwt_token(
+            user_id=user_id,
+            user_role="admin",
+            secret_key=SECRET_KEY
+        )
+
+        return {"message": result, "token": token}
+        # You may add redirect to personal homepage, etc. here
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
