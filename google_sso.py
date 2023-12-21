@@ -16,7 +16,7 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # to allow HTTP temporarily, mig
 # hard coded for now, will move to .env later
 CLIENT_ID = "1064225628661-3s8lonjjjb2risas266sfs5udkntp7qg.apps.googleusercontent.com"
 CLIENT_SECRET = "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"
-OAUTH_URL = "http://localhost:8012"
+OAUTH_URL = "https://ec2-3-144-182-9.us-east-2.compute.amazonaws.com"
 SECRET_KEY = "Doritos"
 
 sso = GoogleSSO(
