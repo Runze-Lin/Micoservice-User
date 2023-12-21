@@ -2,7 +2,6 @@
     # https://examples.javacodegeeks.com/crud-operations-in-python-on-mysql/    
     # https://sesamedisk.com/how-to-write-mysql-crud-queries-in-python/
 from google_sso import router as google_sso_router
-
 from fastapi import FastAPI, Request, HTTPException
 import mysql.connector
 from typing import Optional
@@ -34,8 +33,8 @@ users_svc = UsersService()
 async def root():
     return FileResponse('static/index.html')
     
-@app.get("/users")      ##use this to get the users
-async def get_users(id: Optional[str] = None, username: Optional[str] = None, first_name: Optional[str] = None,
+@app.get("/users", )      ##use this to get the users
+async def get_users(request: Request,id: Optional[str] = None, username: Optional[str] = None, first_name: Optional[str] = None,
                     last_name: Optional[str] = None, email: Optional[str] = None,
                     credit: Optional[int] = None, credit_lt: Optional[int] = None,
                     credit_gt: Optional[int] = None, role: Optional[str] = None,
@@ -52,6 +51,8 @@ async def get_users(id: Optional[str] = None, username: Optional[str] = None, fi
         "role": role
     }
     query = {k: v for k, v in filters.items() if v}    ##simple search
+    auth_header = request.headers.get('Authorization')
+    print("Authorization header (expected to be jwt token):", auth_header)
     return users_svc.get_users(query, limit, offset)
 
 @app.get("/users/{user_id}")  ## get user by user_id
@@ -62,15 +63,21 @@ async def get_user(user_id: int):
 @app.post("/users")         ##create users function
 async def create_user(request: Request):
     user_data = await request.json()
+    auth_header = request.headers.get('Authorization')
+    print("Authorization header (expected to be jwt token):", auth_header)
     return users_svc.create_user(user_data)
 
 @app.put("/users/{user_id}")        ##update users function
 async def update_user(user_id: int, request: Request):
     user_data = await request.json()
+    auth_header = request.headers.get('Authorization')
+    print("Authorization header (expected to be jwt token):", auth_header)
     return users_svc.update_user(user_id, user_data)
 
 @app.delete("/users/{user_id}")  ##delete users function
-async def delete_user(user_id: int):
+async def delete_user(user_id: int, request: Request):
+    auth_header = request.headers.get('Authorization')
+    print("Authorization header (expected to be jwt token):", auth_header)
     return users_svc.delete_user(user_id)
 
 if __name__ == "__main__":

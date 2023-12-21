@@ -35,7 +35,15 @@ function getUsers(formData = null) {
     if (formData) {
         url += '?' + formDataToQueryString(formData);
     }
-    fetch(url)
+
+    // pull jwt token from web browser local storage
+    var token = localStorage.getItem('jwtToken');
+
+    fetch(url, {
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
+    })
         .then(function(response) {
             return response.json();
         })
@@ -67,10 +75,15 @@ document.getElementById('createUserForm').onsubmit = function(event) {
         userData[key] = value;
     });
 
+    // pull jwt token from web browser local storage
+    var token = localStorage.getItem('jwtToken');
+
+
     fetch(apiBaseUrl + '/users', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify(userData),
     })
@@ -100,10 +113,14 @@ document.getElementById('updateUserForm').onsubmit = function(event) {
         if (value) userData[key] = value;
     });
 
+     // pull jwt token from web browser local storage
+    var token = localStorage.getItem('jwtToken');
+
     fetch(apiBaseUrl + '/users/' + userId, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify(userData),
     })
@@ -123,8 +140,15 @@ document.getElementById('updateUserForm').onsubmit = function(event) {
 document.getElementById('deleteUserForm').onsubmit = function(event) {
     event.preventDefault();
     var userId = document.getElementById('deleteUserId').value;
+
+    // pull jwt token from web browser local storage
+    var token = localStorage.getItem('jwtToken');
+
     fetch(apiBaseUrl + '/users/' + userId, {
         method: 'DELETE',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
     })
     .then(function(response) {
         return response.json();
