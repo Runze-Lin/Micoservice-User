@@ -1,0 +1,39 @@
+<!-- References: -->
+<!-- https://developer.mozilla.org/en-US/docs/Web/API/Storage/setItem -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Process and save JWT</title>
+    <script>
+        window.onload = function() {
+            // get token
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const errorContainer = document.getElementById('error-container');
+
+            if (token) {
+                try {
+                    // save the token in localStorage as key val pairs
+                    localStorage.setItem('jwtToken', token);
+
+                    // redirect to the dashboard
+                    
+                    //window.location.href = 'https://6156staticweb.s3.amazonaws.com/static/dashboard.html';
+                    window.location.href = 'http://localhost:8012/static/dashboard.html';
+                } catch (e) {
+                    // display error
+                    errorContainer.textContent = 'We faced error saving the token. Please try logging in again.';
+                    errorContainer.style.display = 'block';
+                }
+            } else {
+                // No token found, redirect back to login page
+                errorContainer.textContent = 'We faced error saving the token. Please try logging in again.';
+                errorContainer.style.display = 'block';
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Saving login information...</h1>
+</body>
+</html>

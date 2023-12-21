@@ -16,7 +16,7 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # to allow HTTP temporarily, mig
 # hard coded for now, will move to .env later
 CLIENT_ID = "1064225628661-3s8lonjjjb2risas266sfs5udkntp7qg.apps.googleusercontent.com"
 CLIENT_SECRET = "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"
-OAUTH_URL = "https://ec2-3-144-182-9.us-east-2.compute.amazonaws.com"
+OAUTH_URL = "http://localhost:8012"
 SECRET_KEY = "Doritos"
 
 sso = GoogleSSO(
@@ -178,8 +178,12 @@ async def auth_callback(request: Request):
                     <script>
                         const userData = {user_json};
 
-                        document.getElementById('login-host').addEventListener('click', function() {{
-                            fetch('/login/host', {{
+                        function redirectTo(url) {{
+                            window.location.href = url;
+                        }}
+
+                        function handleLogin(endpoint) {{
+                            fetch(endpoint, {{
                                 method: 'POST',
                                 headers: {{
                                     'Content-Type': 'application/json'
@@ -188,41 +192,25 @@ async def auth_callback(request: Request):
                             }})
                             .then(response => response.json())
                             .then(data => {{
-                                alert(data.message);
-                            }});
-                        }});
-
-                        document.getElementById('login-guest').addEventListener('click', function() {{
-                            fetch('/login/guest', {{
-                                method: 'POST',
-                                headers: {{
-                                    'Content-Type': 'application/json'
-                                }},
-                                body: JSON.stringify({{ 'user': userData }})
+                                if (data.redirect) {{
+                                    redirectTo(data.redirect);
+                                }} else {{
+                                    alert(data.message);
+                                }}
                             }})
-                            .then(response => response.json())
-                            .then(data => {{
-                                alert(data.message);
+                            .catch(error => {{
+                                console.error('Error during fetch:', error);
+                                alert('Login failed. Please try again.');
                             }});
-                        }});
+                        }}
 
-                        document.getElementById('login-admin').addEventListener('click', function() {{
-                            fetch('/login/admin', {{
-                                method: 'POST',
-                                headers: {{
-                                    'Content-Type': 'application/json'
-                                }},
-                                body: JSON.stringify({{ 'user': userData }})
-                            }})
-                            .then(response => response.json())
-                            .then(data => {{
-                                alert(data.message);
-                            }});
-
-                        }});
+                        document.getElementById('login-host').addEventListener('click', () => handleLogin('/login/host'));
+                        document.getElementById('login-guest').addEventListener('click', () => handleLogin('/login/guest'));
+                        document.getElementById('login-admin').addEventListener('click', () => handleLogin('/login/admin'));
                     </script>
                 </body>
                 </html>
+
                 """
             return HTMLResponse(content=html_content)
 
@@ -249,7 +237,9 @@ async def login_host(user_data: dict):
             secret_key=SECRET_KEY
         )
 
-        return {"message": result, "token": token}
+        #redirect_url = f"https://6156staticweb.s3.amazonaws.com/static/process_jwt.html?token={token}"
+        redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
+        return {"message": result, "redirect": redirect_url}
         # you may add redirect to personal homepage, etc. here
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -274,8 +264,9 @@ async def login_guest(user_data: dict):
             secret_key=SECRET_KEY
         )
 
-        return {"message": result, "token": token}
-        # you may add redirect to personal homepage, etc. here
+        #redirect_url = f"https://6156staticweb.s3.amazonaws.com/static/process_jwt.html?token={token}"
+        redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
+        return {"message": result, "redirect": redirect_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -283,8 +274,9 @@ async def login_guest(user_data: dict):
 @router.post("/login/admin")
 async def login_admin(user_data: dict):
     user_info = user_data['user']
-    print(user_info)
-    
+
+    # instead of check and create if not existed yet,
+        # check and directly reject if not existed as admin, since admin were supposed to be "manually" added by other admin    
     users_service = UsersService()
     filters = {'email': user_info['email'], 'role': 'admin'}
     users = users_service.get_users(filters=filters, limit=1, offset=0)
@@ -292,16 +284,17 @@ async def login_admin(user_data: dict):
         content = {"message": "This account is not registered as an Admin, please log in as host/guest."}
         return JSONResponse(content=content, status_code=404)
     user_id = users[0]['id'] 
-    print(user_id)
-    # Generate jwt token
+
+    # (if not rejected)
+    # generate jwt token
     token = generate_jwt_token(
         user_id=user_id,
         role="admin",
         secret_key=SECRET_KEY
     )
-    # you may add redirect to personal homepage, etc. here
-    return {"message": "Welcome!", "token": token}
-
+    #redirect_url = f"https://6156staticweb.s3.amazonaws.com/static/process_jwt.html?token={token}"
+    redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
+    return {"message": "Welcome!", "redirect": redirect_url}
 
 
 app.include_router(router)
