@@ -31,7 +31,7 @@ users_svc = UsersService()
 # api endpoints
 @app.get("/")  ## use this as the static page of this app
 async def root():
-    return FileResponse('static/index.html')
+    return RedirectResponse(url="https://nestly6156.s3.us-east-2.amazonaws.com/users_static/index.html")
     
 @app.get("/users", )      ##use this to get the users
 async def get_users(request: Request,id: Optional[str] = None, username: Optional[str] = None, first_name: Optional[str] = None,
