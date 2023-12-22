@@ -4,7 +4,7 @@
     // https://stackoverflow.com/questions/9855656/how-can-i-submit-a-form-using-javascript
 
 // base URL
-var apiBaseUrl = 'https://ec2-3-144-182-9.us-east-2.compute.amazonaws.com/'
+var apiBaseUrl = 'https://eqfosdyv30.execute-api.us-east-1.amazonaws.com/v1'
 
 // convert form data to a query string
 function formDataToQueryString(formData) {
