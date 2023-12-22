@@ -237,8 +237,8 @@ async def login_host(user_data: dict):
             secret_key=SECRET_KEY
         )
 
-        #redirect_url = f"https://6156staticweb.s3.amazonaws.com/static/process_jwt.html?token={token}"
-        redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
+        redirect_url = f"https://nestly6156.s3.us-east-2.amazonaws.com/static/process_jwt.html?token={token}"
+        #redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
         return {"message": result, "redirect": redirect_url}
         # you may add redirect to personal homepage, etc. here
     except Exception as e:
@@ -264,8 +264,8 @@ async def login_guest(user_data: dict):
             secret_key=SECRET_KEY
         )
 
-        #redirect_url = f"https://6156staticweb.s3.amazonaws.com/static/process_jwt.html?token={token}"
-        redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
+        redirect_url = f"https://nestly6156.s3.us-east-2.amazonaws.com/static/process_jwt.html?token={token}"
+        #redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
         return {"message": result, "redirect": redirect_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -292,8 +292,8 @@ async def login_admin(user_data: dict):
         role="admin",
         secret_key=SECRET_KEY
     )
-    #redirect_url = f"https://6156staticweb.s3.amazonaws.com/static/process_jwt.html?token={token}"
-    redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
+    redirect_url = f"https://nestly6156.s3.us-east-2.amazonaws.com/static/process_jwt.html?token={token}"
+    #redirect_url = f"http://localhost:8012/static/process_jwt.html?token={token}"
     return {"message": "Welcome!", "redirect": redirect_url}
 
 
